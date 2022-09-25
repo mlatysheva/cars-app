@@ -1,5 +1,6 @@
-import { Component, HostListener } from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {FormBuilder, Validators} from "@angular/forms";
+import {AppService} from "./app.service";
 
 @Component({
   selector: 'app-root',
@@ -8,7 +9,7 @@ import {FormBuilder, Validators} from "@angular/forms";
 })
 export class AppComponent {
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private appService: AppService) {
   }
 
   priceForm = this.fb.group({
@@ -17,65 +18,28 @@ export class AppComponent {
     car: ['', Validators.required],
   });
 
-  carsData= [
-    {
-      image: "1.png",
-      name: "Lamborghini Huracan Spyder",
-      gear: "полный",
-      engine: 5.2,
-      seats: 2,
-    },
-    {
-      image: "2.png",
-      name: "Chevrolet Corvette",
-      gear: "полный",
-      engine: 6.2,
-      seats: 2,
-    },
-    {
-      image: "3.png",
-      name: "Ferrari California",
-      gear: "полный",
-      engine: 3.9,
-      seats: 4,
-    },
-    {
-      image: "4.png",
-      name: "Lamborghini Urus",
-      gear: "полный",
-      engine: 3.9,
-      seats: 4,
-    },
-    {
-      image: "5.png",
-      name: "Audi R8",
-      gear: "полный",
-      engine: 5.2,
-      seats: 2,
-    },
-    {
-      image: "6.png",
-      name: "Chevrolet Camaro",
-      gear: "полный",
-      engine: 2.8,
-      seats: 4,
-    },
-  ];
+  carsData: any;
+
+  ngOnInit() {
+    this.appService.getData().subscribe(carsData => this.carsData = carsData);
+  }
 
   goScroll(target: HTMLElement, car?: any) {
-    target.scrollIntoView({ behavior: "smooth"});
+    target.scrollIntoView({behavior: "smooth"});
     if (car) {
       this.priceForm.patchValue({car: car.name});
     }
   };
 
   trans: any;
+
   @HostListener('document:mouseover', ['$event'])
   onMouseMove(e: MouseEvent) {
     this.trans = {transform: 'translate3d(' + ((e.clientX * 0.3) / 8) + 'px,' + ((e.clientY * 0.3) / 8) + 'px,0px)'};
   };
 
   bgPos: any;
+
   @HostListener('document:scroll', ['$event'])
   onScroll() {
     this.bgPos = {backgroundPositionX: '0' + (0.3 * window.scrollY) + 'px'};
@@ -83,8 +47,17 @@ export class AppComponent {
 
   onSubmit() {
     if (this.priceForm.valid) {
-      alert("Спасибо за заявку, мы свяжемся с вами в ближайшее время!");
-      this.priceForm.reset();
+
+      this.appService.sendQuery(this.priceForm.value)
+        .subscribe({
+          next: (response: any) => {
+            alert(response.message);
+            this.priceForm.reset();
+          },
+          error: (response) => {
+            alert(response.error.message);
+          }
+        });
     }
   }
 }
